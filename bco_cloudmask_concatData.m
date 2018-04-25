@@ -41,6 +41,7 @@ t = cell(length(dayvector),1);
 h = cell(length(dayvector),1);
 date = cell(length(dayvector),1);
 status = cell(length(dayvector),1);
+elv = cell(length(dayvector),1);
 
 redodims = zeros(1, length(dayvector));
 
@@ -131,16 +132,29 @@ for i=1:length(dayvector)
 		else
 			error(['Variable Z or Zf not found in file' files{ind_foundfiles}])
 		end
-		tread = unixtime2sdn(ncread(files{ind_foundfiles},'time'));
-        statusread = ncread(files{ind_foundfiles},'status');
+		tread = unixtime2sdn(ncread(files{ind_foundfiles}, 'time'));
+        statusread = ncread(files{ind_foundfiles}, 'status');
+        elvread = ncread(files{ind_foundfiles}, 'elv');
 
 
         Zcell{i} = fillData(tgoal, tread, Zread);
         t{i} = tgoal';
 
+		%%%%%%%% Check here what to apply to elvread to get elv data %%%%%%
 		h{i} = ncread(files{ind_foundfiles},'range');
 		status{i} = fillData(tgoal, tread, statusread);
         status{i}(isnan(status{i})) = 0;
+		elv{i} = fillData(tgoal, tread, elvread);
+		% Interpolate elevation data to fill nans resulting from regridding
+		elv{i} = naninterp(elv{i});
+		% Replace elevation data again with nan when the radar was not operating (status = 0)
+		elv{i}(status{i}==0) = nan;
+
+		% Remove reflectivity if radar was scanning  (elv <= 98deg)
+		Zcell{i}(:,elv{i}<=89) = nan;
+		% Add status flag for scanning times
+		status{i}(elv{i}<=89) = 3;
+
         wind{i} = fillData(tgoal, twindread, windread);
 
 		% Remove cloud beard signals (< -50 dBZ)

@@ -1,9 +1,9 @@
-function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange)
+function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange, version)
 
 % clear; close all
 
 filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed_concomp.mat'];
-outfile = ['~/bco_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_v0.1.nc'];
+outfile = ['~/bco_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_' version '.nc'];
 outfile_2 = ['~/bco_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_extradata_v0.1.nc'];
 
 varnames2read = {...%'Z',
@@ -85,7 +85,7 @@ long_name = {...%'Filtered and Mie corrected Radar Reflectivity of all Hydromete
              'Cloud object ID';
              'Total number of clouds';
              'Time';
-             'Radar On(1), radar Off(0), data gap filled(2)';
+             'Radar On(1), radar Off(0), data gap filled(2), radar scanning (3)';
              'Wind measured (0), wind missing (1)'};
 
 long_name_2 = {'Filtered and Mie corrected Radar Reflectivity of all Hydrometeors';

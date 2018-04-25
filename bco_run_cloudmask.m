@@ -5,6 +5,8 @@ clear; close all
 path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
 % Set radar names to work on
 radarname = {'KATRIN', 'MBR'};
+% Set version for output nc file
+version = 'v0.2';
 
 
 %% Prepare dates %%%%%%%%%%%%%%%%%%%%%%%%
