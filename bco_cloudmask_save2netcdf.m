@@ -85,7 +85,7 @@ long_name = {...%'Filtered and Mie corrected Radar Reflectivity of all Hydromete
              'Cloud object ID';
              'Total number of clouds';
              'Time';
-             'Radar On(1), radar Off(0), data gap filled(2), radar scanning (3)';
+             'Radar On (1), radar Off (0), no data file (2), radar scanning (3)';
              'Wind measured (0), wind missing (1)'};
 
 long_name_2 = {'Filtered and Mie corrected Radar Reflectivity of all Hydrometeors';
