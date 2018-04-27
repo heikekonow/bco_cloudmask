@@ -58,7 +58,7 @@ for i=1:length(dayvector)
 	foundfiles = strfind(files, datestr(dayvector(i), 'yymmdd'));
     % Get index of found files
 	ind_foundfiles = cellfun(@(x) ~isempty(x), foundfiles);
-    
+
     % Look for wind data files from current date
 	wind_foundfiles = strfind(wind_files, datestr(dayvector(i), 'yymmdd'));
     % Get index of found wind files
@@ -66,19 +66,19 @@ for i=1:length(dayvector)
 
 	% Make time vector with 10 second intervals (needed first time in if clause)
 	tgoal = dayvector(i):1/24/60/6:dayvector(i)+datenum(0, 0, 0, 23, 59, 59);
-    
+
     % If radar files exist
 	if [sum(ind_foundfiles)==1]
-        
+
         %
         % %%% RADAR DATA FILE HANDLING %%%
         %
-        
+
         % Copy name of file to variable
 		filename = files{ind_foundfiles};
         % Print out file name
 		disp(filename)
-        
+
         % %%%
         % Check if the original file on share is zipped or unzipped. If
         % it's zipped, unzip to my own folder on scratch, if directly read
@@ -90,63 +90,63 @@ for i=1:length(dayvector)
 		% Check if files are zipped and unzip
         % If no file without ending .bz2 exists AND there is no file with
         % the ending .nc -> unzip file
-        if isempty(lookforunzipped) && ~strcmp(filename(end-2:end), '.nc') 
+        if isempty(lookforunzipped) && ~strcmp(filename(end-2:end), '.nc')
             % Display
 			disp('unzipping')
-            
+
             % Unzip file
 			eval(['! bunzip2 -c ' filename ' > ' tmppath filename(36:end-4)])
-            
+
 			% Rename file in list (remove extension .bz2) add path to
 			% folder on scratch
 			files{ind_foundfiles} = [tmppath filename(36:end-4)];
-			
+
             % Check if file can be found
 			if isempty(listFiles(files{ind_foundfiles}))
 				error(['Error: Something''s gone wrong with renaming of unzipped file: ' files{i}])
             end
-        
+
         % If the file that was found on share already has the ending .nc
 		elseif strcmp(filename(end-2:end), '.nc')
             % do nothing...
 			files{ind_foundfiles} = files{ind_foundfiles};
-            
-        % if the data on the share is zipped but an unzipped version exists 
+
+        % if the data on the share is zipped but an unzipped version exists
         % on scratch
-        else 
+        else
 			files{ind_foundfiles} = [tmppath filename(36:end-4)];
         end
-        
+
         %
         % %%% WIND DATA FILE HANDLING %%%
         %
-        
+
         % Same for wind data: look for files and unzip if needed
-        
+
         % If a file with wind data exists
 		if [sum(ind_wind_foundfiles)==1]
-            
+
             % Copy file name to variable
 			wind_filename = wind_files{ind_wind_foundfiles};
-            
+
             % Check if current wind data file has ending .nc
 	        lookforunzipped = strcmp(wind_filename(end-1:end), 'nc');
-            
+
             % If there is no file with ending .nc AND there is no wind file
             % in temporary folder (mine on scratch)
 	        if ~lookforunzipped && ...
                     isempty(listFiles([tmppath 'Meteorology*' datestr(dayvector(i), 'yymmdd') '*']))
-				
+
                 % Display
                 disp('unzipping wind')
-                
+
                 % ~isempty(strfind(wind_filename, 'bz')) [old version new version below recommended by matlab]
 				% If the file name has ending .bz or .bz2
                 if contains(wind_filename, 'bz')
-                    
+
                     % Unzip
 					eval(['! bunzip2 -c ' wind_filename ' > ' tmppath wind_filename(70:end-4)])
-                    
+
 					% Rename file in list (remove extension .bz2)
 					wind_files{ind_wind_foundfiles} = [tmppath wind_filename(70:end-4)];
                 else % If the file ending is supposedly .nc
@@ -160,14 +160,14 @@ for i=1:length(dayvector)
                 if isempty(listFiles(wind_files{ind_wind_foundfiles}))
 					error(['Error: Something''s gone wrong with renaming of unzipped file: ' files{i}])
                 end
-                
+
             % If there is a file with ending .nc (implicit) AND there is no
             % wind file in temporary folder (mine on scratch)
             elseif isempty(listFiles([tmppath 'Meteorology*' datestr(dayvector(i), 'yymmdd') '*']))
-				
+
                 % Display
                 disp('copying wind')
-                
+
                 % Copy file to temporary folder
 				eval([' ! cp ' wind_filename ' ' tmppath])
 
@@ -175,17 +175,17 @@ for i=1:length(dayvector)
 				wind_files{ind_wind_foundfiles} = [tmppath wind_filename(70:end)];
 
             % If there is a wind file in temporary folder
-            else 
+            else
 				% Look for file name in temporary folder
 				wind_out = listFiles([tmppath 'Meteorology*' datestr(dayvector(i), 'yymmdd') '*']);
                 % Rename file in list (set new path)
 				wind_files{ind_wind_foundfiles} = [tmppath wind_out{1}];
             end
-            
+
             %
             % %%% READ WIND DATA %%%
             %
-            
+
 			% Read wind velocity
 	        windread = ncread(wind_files{ind_wind_foundfiles}, 'VEL');
             % Read time of wind data
@@ -202,16 +202,16 @@ for i=1:length(dayvector)
 		% If variable Zf exists in file
 		if ncVarInFile(files{ind_foundfiles},'Zf')
 			Zread= ncread(files{ind_foundfiles},'Zf');
-        
+
         % Else, check if variable Z exists in file
 		elseif ncVarInFile(files{ind_foundfiles},'Z')
 			Zread= ncread(files{ind_foundfiles},'Z');
-            
+
         % Else, return an error since the reflectivity data is missing
         else
 			error(['Variable Z or Zf not found in file' files{ind_foundfiles}])
         end
-        
+
         % Read time data
 		tread = unixtime2sdn(ncread(files{ind_foundfiles}, 'time'));
         % Read radar status
@@ -224,7 +224,7 @@ for i=1:length(dayvector)
         %
         % %%% UNIFY DATA %%%
         %
-        
+
         % Get reflectivity data onto uniform grid (function defined at the bottom)
         Zcell{i} = fillData(tgoal, tread, Zread);
         % Get status data onto uniform grid (function defined at the bottom)
@@ -233,31 +233,39 @@ for i=1:length(dayvector)
         wind{i} = fillData(tgoal, twindread, windread);
         % Get elevation data onto uniform grid (function defined at the bottom)
 		elv{i} = fillData(tgoal, tread, elvread);
-        
-		% Interpolate elevation data to fill nans resulting from regridding
-		elv{i} = naninterp(elv{i});
+
+		% If variable elv{i} is not only filled with nans
+		if sum(isnan(elv{i}))~=length(elv{i})
+			% Interpolate elevation data to fill nans resulting from regridding
+			elv{i} = naninterp(elv{i});
+
+		% If variable elv{i} only consists of nans
+		else
+			% Set elevation to 90 deg. It's only an assumption but thats the best we know
+			elv{i} = repmat(90, 1, length(elv{i}));
+		end
 		% Replace elevation data again with nan when the radar was not operating (status = 0)
 		elv{i}(status{i}==0) = nan;
-        
+
         % Copy output time array to overall time cell array
         t{i} = tgoal';
 
 		% Remove reflectivity if radar was scanning  (elv <= 89 deg)
 		Zcell{i}(:,elv{i}<=89) = nan;
-        
+
         % Convert status nan to 0
         status{i}(isnan(status{i})) = 0;
 		% Add status flag for scanning times
 		status{i}(elv{i}<=89) = 3;
-        
+
 		% Remove cloud beard signals (< -50 dBZ)
 		Zcell{i}(Zcell{i}<-50) = nan;
-        
+
     % If no radar files exist and this is the first loop iteration
 	elseif i==1
 		% Display
         disp(['File not found: ' datestr(dayvector(i), 'yymmdd')])
-        
+
         % Create emtpy arrays for:
         % reflectivity
 		Zcell{i} = nan(1,1);
@@ -274,12 +282,12 @@ for i=1:length(dayvector)
 
         % Take note that dimensions have to be redone later
 		redodims(i) = 1;
-        
+
     % If no radar files exist and this is the not first loop iteration
     else
         % Display
 		disp(['File not found: ' datestr(dayvector(i), 'yymmdd')])
-        
+
         % If the range variable in the previous loop has been read and is
         % longer than one
 		if length(h{i-1})>1
@@ -287,7 +295,7 @@ for i=1:length(dayvector)
             % previous day and 6*60*24 measurements per day (every ten
             % seconds)
 			Zcell{i} = nan(length(h{i-1}), 60*6*24);
-            
+
         % If the range variable in the previous loop is only one entry
         else
             % Set one nan value to reflectivity variable
@@ -295,7 +303,7 @@ for i=1:length(dayvector)
             % Take note that dimensions have to be redone later
 			redodims(i) = 1;
         end
-        
+
         % Create time array for this day with an entry every 10 seconds
 		t{i} = (dayvector(i):1/24/60/6:dayvector(i)+datenum(0, 0, 0, 23, 59, 59))';
         % Copy range values from previous day
@@ -313,17 +321,17 @@ redodims = find(redodims);
 
 % If dimensions have to be redone
 if ~isempty(redodims)
-    
+
     % Get size of each cell of reflectivity
 	size_Z = cell2mat(cellfun(@size, Zcell, 'uni', false));
-    
+
     % Find first cell with matrix and not only one value, i.e. first cell
     % with "real" data
 	ind_firstNonNan = find(size_Z(:,1) ~= 1, 1, 'first');
-    
+
     % Loop all days where dimensions have to be redone
 	for i=1:length(redodims)
-        
+
         % Create array of nans of the size of the first non-nan cell
 		Zcell{redodims(i)} = nan(size(Zcell{ind_firstNonNan}));
         % Create vector of nans of the length of the first non-nan cell
@@ -349,16 +357,16 @@ unique_lengths = unique(s(:,1));
 
 % Loop unique lengths of range vector
 for i=1:length(unique_lengths)
-    
+
     % Get index of all entries with current range vector length
     ind = s(:,1)==unique_lengths(i);
-    
+
     % Convert range cells with current range vector to matrix
     height_matrix = cell2mat(h(ind)');
-    
+
     % Calculate differences between entries
     differences = sum(diff(height_matrix,1,2));
-    
+
     % Check if differences are zero, i.e. all range vectors are the same
     if sum(differences)~=0
 %         index_diff = find(differences~=0);
@@ -401,22 +409,22 @@ wind = reshape(wind, [], 1);
 wind_missing = zeros(length(wind),1);
 % Loop all nan entries (not pretty but hopefully working)
 for i=1:length(wind)
-    
+
     % If wind entry is nan
 	if isnan(wind(i))
-        
+
         % If current loop iteration is after first day, i.e. 6*60*24 steps
         % after the first
 		if i - (6*60*24)>0
-            
+
             % Take wind speed as average of previous 24 hour period
 			wind(i) = mean(wind(i - (6*60*24):i-1), 'omitnan');
             % Set flag that wind was missing
 			wind_missing(i) = 1;
-            
+
         % If current loop iteration is within first day
         else
-            
+
             % Set wind speed to 8 m/s
 			wind(i) = 8;
             % Set flag that wind was missing
@@ -438,23 +446,24 @@ save([outpath 'Z_' radarname '_' radarrange '_' start_date '-' end_date '.mat'],
 % Display
 disp('Concatenated data saved')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Functions
 function dataout = fillData(timevec_out, timevec_in, data)
-    
+
     % Get index of times to unify times
 	ind_time = get_indTime(timevec_out, timevec_in);
-    
+
     % Find the dimension that is not the time
 	notimedim = find(size(data)~=length(timevec_in));
-    
+
     % Create output data array with desired dimensions
 	dataout = nan(size(data, notimedim), length(timevec_out));
-    
+
     % If data is one-dimensional
 	if sum(size(data)==1)
         % Put data into output array according to time indices
 	    dataout(:, ~isnan(ind_time)) = data(ind_time(~isnan(ind_time)));
-        
+
     % If data is two-dimensional
     else
         % Put data into output array according to time indices

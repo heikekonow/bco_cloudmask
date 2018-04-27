@@ -7,7 +7,9 @@ path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
 radarname = {'KATRIN', 'MBR'};
 % Set version for output nc file
 version = 'v0.2';
-
+% Write new version of additional data file?
+newextra = false;
+disp('test')
 
 %% Prepare dates %%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -72,7 +74,7 @@ for i=1:length(radarname)
             bco_cloudmask_param(start_date, end_date, radarname{i}, unique_height{i}{j})
 
             % Save data to netcdf
-            bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, unique_height{i}{j})
+            bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, unique_height{i}{j}, version, newextra)
         end
     end
 end
