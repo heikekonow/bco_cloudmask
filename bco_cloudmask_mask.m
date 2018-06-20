@@ -1,9 +1,9 @@
-function bco_cloudmask_mask(radarname, radarrange, dates)
+function bco_cloudmask_mask(radarname, radarrange, start_date, end_date)
 % function bco_cloudmask_mask(start_date, end_date)
     % radarname{i}, unique_height{i}{j}, dates{i,j}(ind_years,:)
 
-start_date = dates(1,:);
-end_date = dates(end,:);
+% start_date = dates(1,:);
+% end_date = dates(end,:);
 %% Load data
 
 % clear; %close all
@@ -51,7 +51,7 @@ save([filepath(1:end-4) '_closed.mat'], '-v7.3')
 
 clear Z cloudMask_closed con_comp numMask
 
-load(filepath, 'height', 'time', 'status', 'wind', 'date', 'wind_missing')
+load(filepath, 'height', 'time', 'status', 'wind', 'date', 'wind_missing', 'LDR', 'VEL', 'RMS')
 
 save([filepath(1:end-4) '_closed.mat'], '-append')
 

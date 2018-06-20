@@ -4,12 +4,11 @@ clear; close all
 % Set path to radar data
 path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
 % Set radar names to work on
-radarname = {'KATRIN', 'MBR'};
+radarname = {'MBR', 'KATRIN'};
 % Set version for output nc file
-version = 'v0.2';
+version = 'v0.3';
 % Write new version of additional data file?
-newextra = false;
-disp('test')
+newextra = true;
 
 %% Prepare dates %%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,21 +59,22 @@ for i=1:length(radarname)
 
             % First and last date of files to read (neede for file naming)
             start_date = dates_use(1,:);
+            % end_date = dates_use(5,:); % use for quick debugging
             end_date = dates_use(end,:);
 
             %% Actual processing %%%%%%%%%%%%%%%%%%%%%%%%
 
             % Concatenate data
-            bco_cloudmask_concatData(path, datafiles, radarname{i}, unique_height{i}{j}, dates{i,j}(ind_years,:))
+            bco_cloudmask_concatData(path, datafiles, radarname{i}, unique_height{i}{j}, start_date, end_date)
 
             % Generate cloud mask
-            bco_cloudmask_mask(radarname{i}, unique_height{i}{j}, dates{i,j}(ind_years,:))
+            bco_cloudmask_mask(radarname{i}, unique_height{i}{j}, start_date, end_date)
 
             % Caclulate cloud parameter
             bco_cloudmask_param(start_date, end_date, radarname{i}, unique_height{i}{j})
 
             % Save data to netcdf
-            bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, unique_height{i}{j}, version, newextra)
+            bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, unique_height{i}{j}, version, newextra, radarname{i})
         end
     end
 end

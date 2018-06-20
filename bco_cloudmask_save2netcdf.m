@@ -1,4 +1,4 @@
-function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange, vers, newextra)
+function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange, vers, newextra, instrument)
 
 % Set paths to temporary file and output files
 filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed_concomp.mat'];
@@ -100,32 +100,40 @@ writeNetCDF(outfile,ncVarNames,ncDims,varData,varInfo,globAtt)
 if newextra
 
     % List of variable names in temporary file
-    varnames2read_2 = {'Z','cloudMask','cloudMask_closed','windSpeed'};
+    varnames2read_2 = {'Z','cloudMask','cloudMask_closed','windSpeed',...
+    'LDR', 'VEL', 'RMS'};
 
     % Load data
     load(filepath,varnames2read_2{:})
 
     % List of variable names in netcdf file
-    ncVarNames_2 = {'Zf','cloudMask','cloudMask_closed','windSpeed'};
+    ncVarNames_2 = {'Zf','cloudMask','cloudMask_closed','windSpeed',...
+    'LDR', 'VEL', 'RMS'};
 
     % Concatenate variable data
-    varData_2 = {Z,cloudMask,cloudMask_closed, windSpeed{1}};
+    varData_2 = {Z,cloudMask,cloudMask_closed, windSpeed{1}, LDR, VEL, RMS};
 
     % List variable dimensions
     ncDims_2 = {{'height',length(height{1}),'time',length(time{1})};...
            {'height',length(height{1}),'time',length(time{1})};...
            {'height',length(height{1}),'time',length(time{1})};...
            {'height',length(height{1}),'time',length(time{1})};...
+           {'height',length(height{1}),'time',length(time{1})};...
+           {'height',length(height{1}),'time',length(time{1})};...
+           {'height',length(height{1}),'time',length(time{1})}
             };
 
     % List variable units
-    units_2 = {'dBZ'; ''; ''; 'm/s'};
+    units_2 = {'dBZ'; ''; ''; 'm/s'; 'dbZ'; 'm/s'; 'm/s'};
 
     % List variable long names
     long_name_2 = {'Filtered and Mie corrected Radar Reflectivity of all Hydrometeors';
                 'Cloud mask';
                 'Cloud mask after morphological closing';
-                'Wind speed';};
+                'Wind speed';
+                'Linear De-Polarization Ratio LDR of all Hydrometeors';
+                'Doppler Velocity VEL of all Hydrometeors';
+                'Peak Width RMS of all Hydrometeors'};
     % Concatenate all information about variable that will be written to netcdf
     varInfo_2 = [long_name_2, units_2, varnames2read_2', ncVarNames_2'];
 
@@ -134,7 +142,7 @@ if newextra
             {'contact','heike.konow@mpimet.mpg.de'};...
             {'location','The Barbados Cloud Observatory, Deebles Point, Barbados, West Indies'};...
             {'institution','Max Planck Institute for Meteorology, Hamburg'};...
-            {'instrument','MBR2 cloud radar'}};
+            {'instrument',[instrument ' cloud radar']}};
 
     % Write data to netcdf file
     writeNetCDF(outfile_2,ncVarNames_2,ncDims_2,varData_2,varInfo_2,globAtt_2)

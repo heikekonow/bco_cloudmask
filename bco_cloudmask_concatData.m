@@ -1,15 +1,15 @@
-function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, dates)
+function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, start_date, end_date)
 
 % Variables for debugging
-a = 0; b = 0; c = 0; d = 0; f = 0; g = 0; h = 0; j = 0; k = 0; l = 0; m = 0; n = 0; o = 0; p = 0; q = 0; r = 0; s = 0; t = 0; u = 0; v = 0; w = 0; x = 0; y = 0; z = 0;
+% a = 0; b = 0; c = 0; d = 0; f = 0; g = 0; h = 0; j = 0; k = 0; l = 0; m = 0; n = 0; o = 0; p = 0; q = 0; r = 0; s = 0; t = 0; u = 0; v = 0; w = 0; x = 0; y = 0; z = 0;
 
 % Set upper limit for analysis
 % >>> remove later?
 height_limit = 13500;
 
 % Get first and last day of dataset
-start_date = dates(1,:);
-end_date = dates(end,:);
+% start_date = dates(1,:);
+% end_date = dates(end,:);
 
 % Set paths to data
 outpath = '/scratch/local1/m300512/bco_concat/';
@@ -42,6 +42,9 @@ dayvector = datenum(start_date, 'yyyymmdd'):datenum(end_date, 'yyyymmdd');
 
 % Preallocate arrays
 Zcell = cell(length(dayvector),1);
+VELcell = cell(length(dayvector),1);
+RMScell = cell(length(dayvector),1);
+LDRcell = cell(length(dayvector),1);
 t = cell(length(dayvector),1);
 h = cell(length(dayvector),1);
 date = cell(length(dayvector),1);
@@ -212,6 +215,23 @@ for i=1:length(dayvector)
 			error(['Variable Z or Zf not found in file' files{ind_foundfiles}])
         end
 
+        % Look if additional variables exist, otherwise fill with nans
+        if ncVarInFile(files{ind_foundfiles},'VEL')
+            VELread = ncread(files{ind_foundfiles}, 'VEL');
+        else
+            VELread = nan(size(Zread));
+        end
+        if ncVarInFile(files{ind_foundfiles},'RMS')
+            RMSread = ncread(files{ind_foundfiles}, 'RMS');
+        else
+            RMSread = nan(size(Zread));
+        end
+        if ncVarInFile(files{ind_foundfiles},'LDR')
+            LDRread = ncread(files{ind_foundfiles}, 'LDR');
+        else
+            LDRread = nan(size(Zread));
+        end
+
         % Read time data
 		tread = unixtime2sdn(ncread(files{ind_foundfiles}, 'time'));
         % Read radar status
@@ -227,6 +247,10 @@ for i=1:length(dayvector)
 
         % Get reflectivity data onto uniform grid (function defined at the bottom)
         Zcell{i} = fillData(tgoal, tread, Zread);
+        % Do the same for velocity, rms, ldr
+        VELcell{i} = fillData(tgoal, tread, VELread);
+        RMScell{i} = fillData(tgoal, tread, RMSread);
+        LDRcell{i} = fillData(tgoal, tread, LDRread);
         % Get status data onto uniform grid (function defined at the bottom)
 		status{i} = fillData(tgoal, tread, statusread);
         % Get wind data onto uniform grid (function defined at the bottom)
@@ -252,6 +276,10 @@ for i=1:length(dayvector)
 
 		% Remove reflectivity if radar was scanning  (elv <= 89 deg)
 		Zcell{i}(:,elv{i}<=89) = nan;
+        % Remove other measurements if radar was scanning
+        VELcell{i}(:,elv{i}<=89) = nan;
+        RMScell{i}(:,elv{i}<=89) = nan;
+        LDRcell{i}(:,elv{i}<=89) = nan;
 
         % Convert status nan to 0
         status{i}(isnan(status{i})) = 0;
@@ -260,6 +288,10 @@ for i=1:length(dayvector)
 
 		% Remove cloud beard signals (< -50 dBZ)
 		Zcell{i}(Zcell{i}<-50) = nan;
+        % Remove signals from cloud beards (Z < -50 dBZ)
+		VELcell{i}(Zcell{i}<-50) = nan;
+		RMScell{i}(Zcell{i}<-50) = nan;
+		LDRcell{i}(Zcell{i}<-50) = nan;
 
     % If no radar files exist and this is the first loop iteration
 	elseif i==1
@@ -269,6 +301,10 @@ for i=1:length(dayvector)
         % Create emtpy arrays for:
         % reflectivity
 		Zcell{i} = nan(1,1);
+        % other
+		VELcell{i} = nan(1,1);
+		RMScell{i} = nan(1,1);
+		LDRcell{i} = nan(1,1);
         % time
 		t{i} = (dayvector(i):1/24/60/6:dayvector(i)+datenum(0, 0, 0, 23, 59, 59))';
         % range
@@ -295,11 +331,19 @@ for i=1:length(dayvector)
             % previous day and 6*60*24 measurements per day (every ten
             % seconds)
 			Zcell{i} = nan(length(h{i-1}), 60*6*24);
+            % other Variables
+			VELcell{i} = nan(length(h{i-1}), 60*6*24);
+			RMScell{i} = nan(length(h{i-1}), 60*6*24);
+			LDRcell{i} = nan(length(h{i-1}), 60*6*24);
 
         % If the range variable in the previous loop is only one entry
         else
             % Set one nan value to reflectivity variable
 			Zcell{i} = nan(1,1);
+            % other Variables
+			VELcell{i} = nan(1,1);
+			RMScell{i} = nan(1,1);
+			LDRcell{i} = nan(1,1);
             % Take note that dimensions have to be redone later
 			redodims(i) = 1;
         end
@@ -334,6 +378,10 @@ if ~isempty(redodims)
 
         % Create array of nans of the size of the first non-nan cell
 		Zcell{redodims(i)} = nan(size(Zcell{ind_firstNonNan}));
+        % other variables
+        VELcell{redodims(i)} = nan(size(Zcell{ind_firstNonNan}));
+        RMScell{redodims(i)} = nan(size(Zcell{ind_firstNonNan}));
+        LDRcell{redodims(i)} = nan(size(Zcell{ind_firstNonNan}));
         % Create vector of nans of the length of the first non-nan cell
 		h{i} = h{ind_firstNonNan};
 	end
@@ -345,6 +393,10 @@ end
 ind_aboveLimit = cellfun(@(x) x>height_limit, h, 'uni', false);
 % Only keep values below height limit
 Zcell = cellfun(@(x, y) x(~y, :), Zcell, ind_aboveLimit, 'uni', false);
+% other variables
+VELcell = cellfun(@(x, y) x(~y, :), VELcell, ind_aboveLimit, 'uni', false);
+RMScell = cellfun(@(x, y) x(~y, :), RMScell, ind_aboveLimit, 'uni', false);
+LDRcell = cellfun(@(x, y) x(~y, :), LDRcell, ind_aboveLimit, 'uni', false);
 % Only keep height below limit
 h = cellfun(@(x, y) x(~y), h, ind_aboveLimit, 'uni', false);
 
@@ -395,6 +447,10 @@ time = sdn2unixtime(time);
 
 % Concatenate reflectivity
 Z = cell2mat(Zcell');
+% other variables
+VEL = cell2mat(Zcell');
+RMS = cell2mat(Zcell');
+LDR = cell2mat(Zcell');
 
 % Concatenate status
 status = cell2mat(status')';
@@ -438,10 +494,14 @@ end
 % Display
 disp('Saving data')
 
+if ~exist(outpath)
+    mkdir(outpath)
+end
 % Save the data to temporary mat file
 save([outpath 'Z_' radarname '_' radarrange '_' start_date '-' end_date '.mat'],...
-			'Z','date','Zcell','height','radarname', 'radarrange',...
-			'time','t','h','status', 'wind', 'wind_missing', '-v7.3')
+			'Z', 'LDR', 'VEL', 'RMS', 'date','Zcell', 'RMScell', 'VELcell', 'LDRcell',...
+            'height','radarname', 'radarrange','time','t','h','status', 'wind',...
+            'wind_missing', '-v7.3')
 
 % Display
 disp('Concatenated data saved')
