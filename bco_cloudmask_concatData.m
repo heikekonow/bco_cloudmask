@@ -286,12 +286,12 @@ for i=1:length(dayvector)
 		% Add status flag for scanning times
 		status{i}(elv{i}<=89) = 3;
 
-		% Remove cloud beard signals (< -50 dBZ)
-		Zcell{i}(Zcell{i}<-50) = nan;
         % Remove signals from cloud beards (Z < -50 dBZ)
 		VELcell{i}(Zcell{i}<-50) = nan;
 		RMScell{i}(Zcell{i}<-50) = nan;
 		LDRcell{i}(Zcell{i}<-50) = nan;
+        % Remove cloud beard signals (< -50 dBZ)
+		Zcell{i}(Zcell{i}<-50) = nan;
 
     % If no radar files exist and this is the first loop iteration
 	elseif i==1
@@ -448,9 +448,9 @@ time = sdn2unixtime(time);
 % Concatenate reflectivity
 Z = cell2mat(Zcell');
 % other variables
-VEL = cell2mat(Zcell');
-RMS = cell2mat(Zcell');
-LDR = cell2mat(Zcell');
+VEL = cell2mat(VELcell');
+RMS = cell2mat(RMScell');
+LDR = cell2mat(LDRcell');
 
 % Concatenate status
 status = cell2mat(status')';

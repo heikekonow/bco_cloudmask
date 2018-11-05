@@ -1,3 +1,7 @@
+
+% Time
+tic
+
 % Clean up
 clear; close all
 
@@ -78,3 +82,5 @@ for i=1:length(radarname)
         end
     end
 end
+
+toc
