@@ -16,6 +16,11 @@ outpath = '/scratch/local1/m300512/bco_concat/';
 tmppath = '/scratch/local1/m300512/data_tmp/';
 windpath = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/I_Meteorology_2m/';
 
+% If tmppath doesn't exist, create
+if ~exist(tmppath,'dir')
+	mkdir(tmppath)
+end
+
 % Combine 2-digit year with '20' to get four-digit year
 year = [num2str(20) start_date(1:2)];
 

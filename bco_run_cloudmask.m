@@ -7,6 +7,8 @@ clear; close all
 
 % Set path to radar data
 path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
+% Set path to output files
+outpath = '/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/cloudObjectMask';
 % Set radar names to work on
 radarname = {'MBR', 'KATRIN'};
 % Set version for output nc file
@@ -31,8 +33,11 @@ for i=1:length(radarname)
     % Loop unique height ranges
     for j=1:length(unique_height{i})
 
+        % Rename variable
+        radarrange = unique_height{i}{j};
+
         % List all files that match radar name and height range
-        radarfiles{i,j} = listFiles([path '*' radarname{i} '*' unique_height{i}{j} '*.nc']);
+        radarfiles{i,j} = listFiles([path '*' radarname{i} '*' radarrange '*.nc']);
 
         % Analyse file name to find double underscores to extract parts of file names
         b{i,j} = cellfun(@(x) regexp(x, '__'), radarfiles{i,j}, 'uni', false);
@@ -41,7 +46,7 @@ for i=1:length(radarname)
         dates{i,j} = cell2mat(cellfun(@(x,y) x(y(5)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
 
         % Display info
-        disp(['>>>>>>>> Processing ' radarname{i} ' radar for ' unique_height{i}{j} ' range <<<<<<<<'])
+        disp(['>>>>>>>> Processing ' radarname{i} ' radar for ' radarrange ' range <<<<<<<<'])
 
         % Generate year vector strings by adding '20' in the beginning
         years = [repmat('20', size(dates{i,j},1), 1)  dates{i,j}(:,1:2)];
@@ -66,19 +71,32 @@ for i=1:length(radarname)
             % end_date = dates_use(5,:); % use for quick debugging
             end_date = dates_use(end,:);
 
+
             %% Actual processing %%%%%%%%%%%%%%%%%%%%%%%%
 
-            % Concatenate data
-            bco_cloudmask_concatData(path, datafiles, radarname{i}, unique_height{i}{j}, start_date, end_date)
+            % Generate output file names to test if files exist already
+            outfile = [outpath '_' radarname{i} '_' radarrange '_' start_date '-' end_date '_' version '.nc'];
+            outfile_2 = [outpath '_' radarname{i} '_' radarrange '_' start_date '-' end_date '_extradata_' version '.nc'];
 
-            % Generate cloud mask
-            bco_cloudmask_mask(radarname{i}, unique_height{i}{j}, start_date, end_date)
+            % Only do processing if outfile doesn't already exist and
+            % ignore if string 'deg' is part of file name
+            if ~exist(outfile, 'file') && ~contains(start_date, 'deg')
+                % Concatenate data
+                bco_cloudmask_concatData(path, datafiles, radarname{i}, radarrange, start_date, end_date)
 
-            % Caclulate cloud parameter
-            bco_cloudmask_param(start_date, end_date, radarname{i}, unique_height{i}{j})
+                % Generate cloud mask
+                bco_cloudmask_mask(radarname{i}, radarrange, start_date, end_date)
 
-            % Save data to netcdf
-            bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, unique_height{i}{j}, version, newextra, radarname{i})
+                % Caclulate cloud parameter
+                bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange)
+
+                % Save data to netcdf
+                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
+
+            % If new extra data should be processed and the corresponding file doesn't exist already
+            elseif newextra && ~exist(outfile_2, 'file') && ~contains(start_date, 'deg')
+                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
+            end
         end
     end
 end
