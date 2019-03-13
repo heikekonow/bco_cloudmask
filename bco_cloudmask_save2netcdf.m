@@ -1,9 +1,9 @@
-function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange, vers, newextra, instrument)
+function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange, vers, newextra, instrument, outfolder)
 
 % Set paths to temporary file and output files
 filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed_concomp.mat'];
-outfile = ['/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_' vers '.nc'];
-outfile_2 = ['/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_extradata_' vers '.nc'];
+outfile = [outfolder 'cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_' vers '.nc'];
+outfile_2 = [outfolder 'cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_extradata_' vers '.nc'];
 
 % Display
 disp('>>>>>>>>>> <<<<<<<<<<')

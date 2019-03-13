@@ -1,7 +1,7 @@
-function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, start_date, end_date)
+function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold)
 
 % Variables for debugging
-% a = 0; b = 0; c = 0; d = 0; f = 0; g = 0; h = 0; j = 0; k = 0; l = 0; m = 0; n = 0; o = 0; p = 0; q = 0; r = 0; s = 0; t = 0; u = 0; v = 0; w = 0; x = 0; y = 0; z = 0;
+a = 0; b = 0; c = 0; d = 0; f = 0; g = 0; h = 0; j = 0; k = 0; l = 0; m = 0; n = 0; o = 0; p = 0; q = 0; r = 0; s = 0; t = 0; u = 0; v = 0; w = 0; x = 0; y = 0; z = 0;
 
 % Set upper limit for analysis
 % >>> remove later?
@@ -22,7 +22,11 @@ if ~exist(tmppath,'dir')
 end
 
 % Combine 2-digit year with '20' to get four-digit year
-year = [num2str(20) start_date(1:2)];
+if str2num(start_date)<20000000
+	year = [num2str(20) start_date(1:2)];
+else
+	year = start_date(1:4);
+end
 
 % Inform user
 disp(['Starting processing for ' year])
@@ -215,6 +219,8 @@ for i=1:length(dayvector)
 		elseif ncVarInFile(files{ind_foundfiles},'Z')
 			Zread= ncread(files{ind_foundfiles},'Z');
 
+		elseif strcmp(radarname, 'W-Band') && ncVarInFile(files{ind_foundfiles},'Ze')
+			Zread= ncread(files{ind_foundfiles},'Ze');
         % Else, return an error since the reflectivity data is missing
         else
 			error(['Variable Z or Zf not found in file' files{ind_foundfiles}])
@@ -223,11 +229,15 @@ for i=1:length(dayvector)
         % Look if additional variables exist, otherwise fill with nans
         if ncVarInFile(files{ind_foundfiles},'VEL')
             VELread = ncread(files{ind_foundfiles}, 'VEL');
+		elseif strcmp(radarname, 'W-Band') && ncVarInFile(files{ind_foundfiles},'MeanVel')
+            VELread = ncread(files{ind_foundfiles}, 'MeanVel');
         else
             VELread = nan(size(Zread));
         end
         if ncVarInFile(files{ind_foundfiles},'RMS')
             RMSread = ncread(files{ind_foundfiles}, 'RMS');
+		elseif strcmp(radarname, 'W-Band') && ncVarInFile(files{ind_foundfiles},'SpecWidth')
+            RMSread = ncread(files{ind_foundfiles}, 'SpecWidth');
         else
             RMSread = nan(size(Zread));
         end
@@ -240,9 +250,18 @@ for i=1:length(dayvector)
         % Read time data
 		tread = unixtime2sdn(ncread(files{ind_foundfiles}, 'time'));
         % Read radar status
-        statusread = ncread(files{ind_foundfiles}, 'status');
+		if ncVarInFile(files{ind_foundfiles},'status')
+			statusread = ncread(files{ind_foundfiles}, 'status');
+		elseif strcmp(radarname, 'W-Band') && ncVarInFile(files{ind_foundfiles},'Status')
+			statusread = ncread(files{ind_foundfiles}, 'Status');
+		end
         % Read radar elevation
-        elvread = ncread(files{ind_foundfiles}, 'elv');
+		if ncVarInFile(files{ind_foundfiles},'elv')
+        	elvread = ncread(files{ind_foundfiles}, 'elv');
+		elseif strcmp(radarname, 'W-Band') && ncVarInFile(files{ind_foundfiles},'Inc_El')
+			elvread = ones(length(statusread), 1) .* 90;
+			% elvread = ncread(files{ind_foundfiles}, 'Inc_El');
+		end
         % Read range data
 		h{i} = ncread(files{ind_foundfiles},'range');
 
@@ -292,11 +311,11 @@ for i=1:length(dayvector)
 		status{i}(elv{i}<=89) = 3;
 
         % Remove signals from cloud beards (Z < -50 dBZ)
-		VELcell{i}(Zcell{i}<-50) = nan;
-		RMScell{i}(Zcell{i}<-50) = nan;
-		LDRcell{i}(Zcell{i}<-50) = nan;
+		VELcell{i}(Zcell{i}<dbz_threshold) = nan;
+		RMScell{i}(Zcell{i}<dbz_threshold) = nan;
+		LDRcell{i}(Zcell{i}<dbz_threshold) = nan;
         % Remove cloud beard signals (< -50 dBZ)
-		Zcell{i}(Zcell{i}<-50) = nan;
+		Zcell{i}(Zcell{i}<dbz_threshold) = nan;
 
     % If no radar files exist and this is the first loop iteration
 	elseif i==1
@@ -433,10 +452,42 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Convert data
+
+% Get length of height arrays
+h_length = cell2mat(cellfun(@(x) size(x, 1), h, 'uni', false));
+% Get number of unique height arrays
+uniq_h = unique(h_length);
+% If more than one height array exists, find the dominant one and disregard the rest
+if length(uniq_h)~=1
+	for j=1:length(uniq_h)
+		sum_h_length(j) = sum(h_length==uniq_h(j));
+	end
+	ind_discard = h_length==uniq_h(sum_h_length==min(sum_h_length));
+	ind_keep = h_length==uniq_h(sum_h_length==max(sum_h_length));
+
+	h{ind_discard} = h{ind_keep(1)};
+	% Generaty empty reflectivity array with range resolution from
+	% previous day and 6*60*24 measurements per day (every ten
+	% seconds)
+	Zcell{ind_discard} = nan(length(h{ind_keep(1)}), 60*6*24);
+	% other Variables
+	VELcell{ind_discard} = nan(length(h{ind_keep(1)}), 60*6*24);
+	RMScell{ind_discard} = nan(length(h{ind_keep(1)}), 60*6*24);
+	LDRcell{ind_discard} = nan(length(h{ind_keep(1)}), 60*6*24);
+
+	% Create time array for this day with an entry every 10 seconds
+	t{ind_discard} = (dayvector(ind_discard):1/24/60/6:dayvector(ind_discard)+datenum(0, 0, 0, 23, 59, 59))';
+
+	% Set status to 2 to indicate that no data file has been found
+	status{ind_discard} = zeros(1, length(t{ind_discard})) + 2; % Set to 2 if file not found
+	% Create empty array in wind variable
+	wind{ind_discard} = zeros(1, length(t{ind_discard}));
+end
+
 % Convert cell of ranges to matrix
 hmat = cell2mat(h');
 % Calculate differences in range gates from day to day
-hdiff = diff(hmat,2);
+hdiff = diff(hmat, 1, 2);
 
 % Error if differences between range gates vary by more than 1 cm per day
 if sum(sum(abs(hdiff)>0.01))>0

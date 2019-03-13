@@ -5,6 +5,9 @@ tic
 % Clean up
 clear; close all
 
+% disp('hello')
+% pause;
+
 % Set path to radar data
 path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
 % Set path to output files
@@ -15,6 +18,8 @@ radarname = {'MBR', 'KATRIN'};
 version = 'v0.3';
 % Write new version of additional data file?
 newextra = true;
+% Set threshold for reflectivity
+dbz_threshold = -50;
 
 %% Prepare dates %%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -22,7 +27,7 @@ newextra = true;
 for i=1:length(radarname)
 
     % List all files matching radar name
-    files = listFiles([path '*' radarname{i} '*.nc']);
+    files = listFiles([path 'MMCR*' radarname{i} '*.nc']);
     % Analyse file name to find double underscores to extract parts of file names
     a{i} = cellfun(@(x) regexp(x, '__'), files, 'uni', false);
     % Extract height range from file names
@@ -37,13 +42,18 @@ for i=1:length(radarname)
         radarrange = unique_height{i}{j};
 
         % List all files that match radar name and height range
-        radarfiles{i,j} = listFiles([path '*' radarname{i} '*' radarrange '*.nc']);
+        radarfiles{i,j} = listFiles([path 'MMCR*' radarname{i} '*' radarrange '*.nc']);
 
         % Analyse file name to find double underscores to extract parts of file names
         b{i,j} = cellfun(@(x) regexp(x, '__'), radarfiles{i,j}, 'uni', false);
 
         % Extract dates from file names
-        dates{i,j} = cell2mat(cellfun(@(x,y) x(y(5)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
+        % dates{i,j} = cell2mat(cellfun(@(x,y) x(y(5)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
+        % 20190206: change indec of double underscores to last one (date should always be last
+        %           in filenames)
+        dates{i,j} = cell2mat(cellfun(@(x,y) x(y(end)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
+
+
 
         % Display info
         disp(['>>>>>>>> Processing ' radarname{i} ' radar for ' radarrange ' range <<<<<<<<'])
@@ -63,14 +73,23 @@ for i=1:length(radarname)
             % List of files to read
             datafiles = radarfiles{i,j}(ind_years);
 
+            % Generate flag to indicate not zenith pointing data
+            notzenith = cellfun(@(x) contains(x, 'deg'), datafiles);
+
+            % Delete datafiles with not zenith pointing data
+            datafiles(notzenith) = [];
+
             % List of dates of files to read
             dates_use = dates{i,j}(ind_years,:);
 
-            % First and last date of files to read (neede for file naming)
-            start_date = dates_use(1,:);
+            % 20190206: changed calcuation of first and last date to min and max
+            %           to not be dependend on order of files on file system
+            start_date = num2str(min(str2num(dates_use)));
+            end_date = num2str(max(str2num(dates_use)));
+            % OLD: First and last date of files to read (needed for file naming)
+            % start_date = dates_use(1,:);
+            % end_date = dates_use(end,:);
             % end_date = dates_use(5,:); % use for quick debugging
-            end_date = dates_use(end,:);
-
 
             %% Actual processing %%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,9 +99,9 @@ for i=1:length(radarname)
 
             % Only do processing if outfile doesn't already exist and
             % ignore if string 'deg' is part of file name
-            if ~exist(outfile, 'file') && ~contains(start_date, 'deg')
+            if ~exist(outfile, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
                 % Concatenate data
-                bco_cloudmask_concatData(path, datafiles, radarname{i}, radarrange, start_date, end_date)
+                bco_cloudmask_concatData(path, datafiles, radarname{i}, radarrange, start_date, end_date, dbz_threshold)
 
                 % Generate cloud mask
                 bco_cloudmask_mask(radarname{i}, radarrange, start_date, end_date)
@@ -94,7 +113,7 @@ for i=1:length(radarname)
                 bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
 
             % If new extra data should be processed and the corresponding file doesn't exist already
-            elseif newextra && ~exist(outfile_2, 'file') && ~contains(start_date, 'deg')
+            elseif newextra && ~exist(outfile_2, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
                 bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
             end
         end
