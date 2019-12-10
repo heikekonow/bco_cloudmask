@@ -10,14 +10,15 @@ disp('Calculating parameters')
 %% Load data
 filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
 
-load(filepath)
+datastruct = load(filepath);
 % Rename variable
-filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
+% filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
 
-conComp = con_comp;
-time_t = time;
-height_t = height;
-clear con_comp time height
+conComp = datastruct.con_comp;
+time_t = datastruct.time;
+height_t = datastruct.height;
+wind = datastruct.wind;
+% clear con_comp time height
 con_comp{1} = conComp;
 time{1} = time_t;
 height{1} = height_t;
@@ -116,6 +117,20 @@ for i=1:length(flightdate)
 end
 
 %% Save data
+
+Z = datastruct.Z;
+LDR = datastruct.LDR;
+VEL = datastruct.VEL;
+RMS = datastruct.RMS;
+date = datastruct.date;
+numMask = datastruct.numMask;
+size_se = datastruct.size_se;
+se = datastruct.se;
+type_se = datastruct.type_se;
+status = datastruct.status;
+wind_missing = datastruct.wind_missing;
+cloudMask = datastruct.cloudMask;
+cloudMask_closed = datastruct.cloudMask_closed;
 
 save([filepath(1:end-4) '_concomp.mat'],'Z', 'LDR', 'VEL', 'RMS','date','height','time*',...
     'averageWindSpeed','cloud*','con_comp','windSpeed','height*',...%'maskIndClouds',...

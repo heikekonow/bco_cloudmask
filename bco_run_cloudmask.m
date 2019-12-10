@@ -12,6 +12,8 @@ clear; close all
 path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
 % Set path to output files
 outpath = '/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/cloudObjectMask';
+% Set folder for output files
+outfolder = outpath(1:end-15);
 % Set radar names to work on
 radarname = {'MBR', 'KATRIN'};
 % Set version for output nc file
@@ -110,7 +112,7 @@ for i=1:length(radarname)
                 bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange)
 
                 % Save data to netcdf
-                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
+                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i}, outfolder)
 
             % If new extra data should be processed and the corresponding file doesn't exist already
             elseif newextra && ~exist(outfile_2, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
