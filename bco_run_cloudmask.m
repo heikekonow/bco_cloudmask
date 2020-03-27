@@ -9,13 +9,13 @@ clear; close all
 % pause;
 
 % Set path to radar data
-path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
+% path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Version_2/';
+path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Ka-Band/MBR2/10s/';
 % Set path to output files
 outpath = '/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/cloudObjectMask';
-% Set folder for output files
-outfolder = outpath(1:end-15);
 % Set radar names to work on
-radarname = {'MBR', 'KATRIN'};
+radarname = {'MBR'};
+% radarname = {'MBR', 'KATRIN'};
 % Set version for output nc file
 version = 'v0.3';
 % Write new version of additional data file?
@@ -28,8 +28,21 @@ dbz_threshold = -50;
 % Loop radars
 for i=1:length(radarname)
 
-    % List all files matching radar name
-    files = listFiles([path 'MMCR*' radarname{i} '*.nc']);
+    % List available month folders
+    monthfolders = listFiles(path, 'full');
+
+    % Loop month folders
+
+    for m=1:length(monthfolders)
+
+        % List netcdf files in month folder
+        files{m} = listFiles([monthfolders{m} '/'], 'full');
+
+    end
+
+    % Concatenate all files into one cell array
+    files = vertcat(files{:});
+
     % Analyse file name to find double underscores to extract parts of file names
     a{i} = cellfun(@(x) regexp(x, '__'), files, 'uni', false);
     % Extract height range from file names
@@ -54,6 +67,37 @@ for i=1:length(radarname)
         % 20190206: change indec of double underscores to last one (date should always be last
         %           in filenames)
         dates{i,j} = cell2mat(cellfun(@(x,y) x(y(end)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
+
+
+    end
+    % end
+
+    % % List all files matching radar name
+    % files = listFiles([path 'MMCR*' radarname{i} '*.nc']);
+    % % Analyse file name to find double underscores to extract parts of file names
+    % a{i} = cellfun(@(x) regexp(x, '__'), files, 'uni', false);
+    % % Extract height range from file names
+    % heightrange{i} = cellfun(@(x,y) x(y(4)+2:y(5)-1), files, a{i}, 'uni', false);
+    % % List unique height ranges
+    % unique_height{i} = unique(heightrange{i});
+
+    % Loop unique height ranges
+    % for j=1:length(unique_height{i})
+    %
+    %     % Rename variable
+    %     radarrange = unique_height{i}{j};
+    %
+    %     % List all files that match radar name and height range
+    %     radarfiles{i,j} = listFiles([path 'MMCR*' radarname{i} '*' radarrange '*.nc']);
+    %
+    %     % Analyse file name to find double underscores to extract parts of file names
+    %     b{i,j} = cellfun(@(x) regexp(x, '__'), radarfiles{i,j}, 'uni', false);
+    %
+    %     % Extract dates from file names
+    %     % dates{i,j} = cell2mat(cellfun(@(x,y) x(y(5)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
+    %     % 20190206: change indec of double underscores to last one (date should always be last
+    %     %           in filenames)
+    %     dates{i,j} = cell2mat(cellfun(@(x,y) x(y(end)+2:end-3), radarfiles{i,j}, b{i,j}, 'uni', false));
 
 
 
@@ -112,14 +156,14 @@ for i=1:length(radarname)
                 bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange)
 
                 % Save data to netcdf
-                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i}, outfolder)
+                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
 
             % If new extra data should be processed and the corresponding file doesn't exist already
             elseif newextra && ~exist(outfile_2, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
                 bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i})
             end
         end
-    end
+    % end
 end
 
 toc
