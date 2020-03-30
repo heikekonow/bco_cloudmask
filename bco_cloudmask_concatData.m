@@ -1,7 +1,9 @@
-function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold)
+% function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold)
+function bco_cloudmask_concatData(radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold, zenithAngle)
 
 % Variables for debugging
 a = 0; b = 0; c = 0; d = 0; f = 0; g = 0; h = 0; j = 0; k = 0; l = 0; m = 0; n = 0; o = 0; p = 0; q = 0; r = 0; s = 0; t = 0; u = 0; v = 0; w = 0; x = 0; y = 0; z = 0;
+
 
 % Set upper limit for analysis
 % >>> remove later?
@@ -33,7 +35,8 @@ disp(['Starting processing for ' year])
 disp('Concatenating')
 
 % Concatenate folder path and filenames to get list of files
-files = cellstr([repmat(char(filepath), length(radarfiles), 1)   char(radarfiles)]);
+% files = cellstr([repmat(char(filepath), length(radarfiles), 1)   char(radarfiles)]);
+files = radarfiles;
 % Get list of folders with wind data (there's a folder for each month)
 wind_folders = listFiles([windpath year '*'],'full');
 
@@ -87,7 +90,7 @@ for i=1:length(dayvector)
         %
 
         % Copy name of file to variable
-		filename = files{ind_foundfiles};
+		filename = getFilenameString(files{ind_foundfiles});
         % Print out file name
 		disp(filename)
 
@@ -103,20 +106,22 @@ for i=1:length(dayvector)
         % If no file without ending .bz2 exists AND there is no file with
         % the ending .nc -> unzip file
         if isempty(lookforunzipped) && ~strcmp(filename(end-2:end), '.nc')
-            % Display
-			disp('unzipping')
 
-            % Unzip file
-			eval(['! bunzip2 -c ' filename ' > ' tmppath filename(36:end-4)])
-
-			% Rename file in list (remove extension .bz2) add path to
-			% folder on scratch
-			files{ind_foundfiles} = [tmppath filename(36:end-4)];
-
-            % Check if file can be found
-			if isempty(listFiles(files{ind_foundfiles}))
-				error(['Error: Something''s gone wrong with renaming of unzipped file: ' files{i}])
-            end
+			error('Implement unzipping with updated file names')
+            % % Display
+			% disp('unzipping')
+			%
+            % % Unzip file
+			% eval(['! bunzip2 -c ' filename ' > ' tmppath filename(36:end-4)])
+			%
+			% % Rename file in list (remove extension .bz2) add path to
+			% % folder on scratch
+			% files{ind_foundfiles} = [tmppath filename(36:end-4)];
+			%
+            % % Check if file can be found
+			% if isempty(listFiles(files{ind_foundfiles}))
+			% 	error(['Error: Something''s gone wrong with renaming of unzipped file: ' files{i}])
+            % end
 
         % If the file that was found on share already has the ending .nc
 		elseif strcmp(filename(end-2:end), '.nc')
@@ -126,7 +131,8 @@ for i=1:length(dayvector)
         % if the data on the share is zipped but an unzipped version exists
         % on scratch
         else
-			files{ind_foundfiles} = [tmppath filename(36:end-4)];
+			error('Implement unzipping with updated file names')
+			% files{ind_foundfiles} = [tmppath filename(36:end-4)];
         end
 
         %
@@ -256,9 +262,11 @@ for i=1:length(dayvector)
 			statusread = ncread(files{ind_foundfiles}, 'Status');
 		end
         % Read radar elevation
-		if ncVarInFile(files{ind_foundfiles},'elv')
-        	elvread = ncread(files{ind_foundfiles}, 'elv');
+		if ncVarInFile(files{ind_foundfiles},'zenith') % ncVarInFile(files{ind_foundfiles},'elv')
+			elvread = ncread(files{ind_foundfiles}, 'zenith');
+			% elvread = ncread(files{ind_foundfiles}, 'elv');
 		elseif strcmp(radarname, 'W-Band') && ncVarInFile(files{ind_foundfiles},'Inc_El')
+			% 20200330: changed variable to zenith to work with new file structure
 			elvread = ones(length(statusread), 1) .* 90;
 			% elvread = ncread(files{ind_foundfiles}, 'Inc_El');
 		end
@@ -289,8 +297,12 @@ for i=1:length(dayvector)
 
 		% If variable elv{i} only consists of nans
 		else
-			% Set elevation to 90 deg. It's only an assumption but thats the best we know
-			elv{i} = repmat(90, 1, length(elv{i}));
+			% % Set elevation to 90 deg. It's only an assumption but thats the best we know
+			% elv{i} = repmat(90, 1, length(elv{i}));
+			% Set elevation to 0 deg. It's only an assumption but thats the best we know
+			% 20200330: changed value to 0 since variable that indicates scanning is
+			% now zenith angle (wich is 0 for zenith)
+			elv{i} = repmat(0, 1, length(elv{i}));
 		end
 		% Replace elevation data again with nan when the radar was not operating (status = 0)
 		elv{i}(status{i}==0) = nan;
@@ -299,16 +311,16 @@ for i=1:length(dayvector)
         t{i} = tgoal';
 
 		% Remove reflectivity if radar was scanning  (elv <= 89 deg)
-		Zcell{i}(:,elv{i}<=89) = nan;
+		Zcell{i}(:,elv{i}~=zenithAngle) = nan;
         % Remove other measurements if radar was scanning
-        VELcell{i}(:,elv{i}<=89) = nan;
-        RMScell{i}(:,elv{i}<=89) = nan;
-        LDRcell{i}(:,elv{i}<=89) = nan;
+        VELcell{i}(:,elv{i}~=zenithAngle) = nan;
+        RMScell{i}(:,elv{i}~=zenithAngle) = nan;
+        LDRcell{i}(:,elv{i}~=zenithAngle) = nan;
 
         % Convert status nan to 0
         status{i}(isnan(status{i})) = 0;
 		% Add status flag for scanning times
-		status{i}(elv{i}<=89) = 3;
+		status{i}(elv{i}~=zenithAngle) = 3;
 
         % Remove signals from cloud beards (Z < -50 dBZ)
 		VELcell{i}(Zcell{i}<dbz_threshold) = nan;
