@@ -302,7 +302,7 @@ for i=1:length(dayvector)
 			% Set elevation to 0 deg. It's only an assumption but thats the best we know
 			% 20200330: changed value to 0 since variable that indicates scanning is
 			% now zenith angle (wich is 0 for zenith)
-			elv{i} = repmat(0, 1, length(elv{i}));
+			elv{i} = repmat(zenithAngle, 1, length(elv{i}));
 		end
 		% Replace elevation data again with nan when the radar was not operating (status = 0)
 		elv{i}(status{i}==0) = nan;
@@ -310,17 +310,19 @@ for i=1:length(dayvector)
         % Copy output time array to overall time cell array
         t{i} = tgoal';
 
-		% Remove reflectivity if radar was scanning  (elv <= 89 deg)
-		Zcell{i}(:,elv{i}~=zenithAngle) = nan;
+		% Remove reflectivity if radar was scanning  (difference between elevation
+		% value and defined zentiht angle > 1 deg)
+		ind_zenith = abs(elv{i}-zenithAngle)>=1;
+		Zcell{i}(:,ind_zenith) = nan;
         % Remove other measurements if radar was scanning
-        VELcell{i}(:,elv{i}~=zenithAngle) = nan;
-        RMScell{i}(:,elv{i}~=zenithAngle) = nan;
-        LDRcell{i}(:,elv{i}~=zenithAngle) = nan;
+        VELcell{i}(:,ind_zenith) = nan;
+        RMScell{i}(:,ind_zenith) = nan;
+        LDRcell{i}(:,ind_zenith) = nan;
 
         % Convert status nan to 0
         status{i}(isnan(status{i})) = 0;
 		% Add status flag for scanning times
-		status{i}(elv{i}~=zenithAngle) = 3;
+		status{i}(ind_zenith) = 3;
 
         % Remove signals from cloud beards (Z < -50 dBZ)
 		VELcell{i}(Zcell{i}<dbz_threshold) = nan;
