@@ -1,31 +1,45 @@
+% 	Code for calculating cloud parameters from segmented cloud objects.
+% 	Input variables:
+%		- start_date	string with first date to process (yyyymmdd format)
+%		- end_date		string with last date to process (yyyymmdd format)
+%		- radarname		string with radar name (MBR or KATRIN)
+%		- radarrange	string with radar height range (e.g. '155m-18m')
+%
+%	contact: Heike Konow, heike.konow@uni-hamburg.de
+%	last revision: Dec 2020
+
+
+
 function bco_cloudmask_param(start_date, end_date, radarname, radarrange)
 
-% clear; % close all
-
+% Necessary, since this code has been copied from flight data processing where
+% multiple flights were looped over. This should be removed in the future.
 flightdate = 1;
-figures = 0;
+% Set to true if test figures should be produced
+figures = false;
 
+% Inform user
 disp('Calculating parameters')
 
-%% Load data
+%% Load data %%%%%%%%%%%%%%%
+% Set path to data to be read
 filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
 
+% Read data
 datastruct = load(filepath);
-% Rename variable
-% filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
 
+% Rename variables
 conComp = datastruct.con_comp;
 time_t = datastruct.time;
 height_t = datastruct.height;
 wind = datastruct.wind;
-% clear con_comp time height
 con_comp{1} = conComp;
 time{1} = time_t;
 height{1} = height_t;
 clear conComp time_t height_t
 
 
-%% Calculate parameters
+%% Calculate parameters %%%%%%%%%%%%%%%
 
 % Preallocate arrays
 windSpeed = cell(length(flightdate),1);
@@ -38,13 +52,8 @@ cloudTop = cell(length(flightdate),1);
 cloudStartTime = cell(length(flightdate),1);
 cloudEndTime = cell(length(flightdate),1);
 
-% Loop flights
+% Loop flights (unnecessary for BCO data)
 for i=1:length(flightdate)
-
-
-%    groundSpeed{i} = repmat(8,1,length(time{i}));
-%     windSpeed{i} = wind;
-
 
     % Number of clouds
     numberOfClouds = con_comp{i}.NumObjects;
@@ -59,9 +68,6 @@ for i=1:length(flightdate)
 
     % Loop individual clouds
     for j=1:numberOfClouds
-        % Generate masks for each individual cloud
-%        maskIndClouds{i}{j} = zeros(length(height{i}),length(time{i}));
-%        maskIndClouds{i}{j}(con_comp{i}.PixelIdxList{j}) = 1;
 
         % Lowest cloud height
         minHeight = min(height_mat(con_comp{i}.PixelIdxList{j}));
@@ -88,7 +94,6 @@ for i=1:length(flightdate)
         end
 
         % Convert linear cloud indices to rows/columns
-%        [~,col] = ind2sub(size(maskIndClouds{i}{j}),con_comp{i}.PixelIdxList{j});
         [~,col] = ind2sub([length(height{i}),length(time{i})],con_comp{i}.PixelIdxList{j});
 
         %%% Cloud length %%%
@@ -116,7 +121,7 @@ for i=1:length(flightdate)
 
 end
 
-%% Save data
+%% Save data %%%%%%%%%%%%%%%
 
 Z = datastruct.Z;
 LDR = datastruct.LDR;
@@ -136,9 +141,5 @@ save([filepath(1:end-4) '_concomp.mat'],'Z', 'LDR', 'VEL', 'RMS','date','height'
     'averageWindSpeed','cloud*','con_comp','windSpeed','height*',...%'maskIndClouds',...
     'numMask','numberOfClouds','size_se','se','type_se','status', 'wind_missing',...
     '-v7.3')
-%save([filepath(1:end-4) '_concomp.mat'],'Z','date','Zcell','height','time*','t','h',...
-%    'averageGroundSpeed','cloud*','con_comp','groundSpeed','height*',...%'maskIndClouds',...
-%    'numMask','numberOfClouds','size_se','se','type_se','status',...
-%    '-v7.3')
 
 disp('Parameters saved')

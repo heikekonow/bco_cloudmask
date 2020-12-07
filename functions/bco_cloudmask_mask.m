@@ -1,26 +1,33 @@
+% 	Code that generates cloud masks from radar reflectivity data.
+% 	Input variables:
+%		- radarname		string with radar name (MBR or KATRIN)
+%		- radarrange	string with radar height range (e.g. '155m-18m')
+%		- start_date	string with first date to process (yyyymmdd format)
+%		- end_date		string with last date to process (yyyymmdd format)
+%
+%	contact: Heike Konow, heike.konow@uni-hamburg.de
+%	last revision: Dec 2020
+
 function bco_cloudmask_mask(radarname, radarrange, start_date, end_date)
-% function bco_cloudmask_mask(start_date, end_date)
-    % radarname{i}, unique_height{i}{j}, dates{i,j}(ind_years,:)
 
-% start_date = dates(1,:);
-% end_date = dates(end,:);
-%% Load data
 
-% clear; %close all
+%% Load data %%%%%%%%%%%%%%%%%%%
 
-% filepath = ['/scratch/local1/m300512/bco_concat/Z_' start_date '-' end_date '.mat'];
+% Specify path to temporary files
 filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '.mat'];
 
+% Inform user
 disp('Generating cloud mask')
 
+% Read data from temporary file
 load(filepath, 'Z')
 
-%% Generate cloud mask
+%% Generate cloud mask (0 = no cloud, 1 = cloud)
 cloudMask = zeros(size(Z));
-
 cloudMask(~isnan(Z)) = 1;
 
-%% Image closing
+
+%% Image closing %%%%%%%%%%%%%%%%%%%
 
 disp('Closing image')
 
@@ -43,7 +50,7 @@ disp('Connected components labeling')
 
 
 
-%% Save data
+%% Save data %%%%%%%%%%%%%%%%%%%
 
 disp('Saving data')
 

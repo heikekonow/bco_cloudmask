@@ -1,3 +1,22 @@
+% 	Code that looks for and concatenates bco data (wind and radar).
+% 	Input variables:
+%		- start_date	string with first date to process (yyyymmdd format)
+%		- end_date		string with last date to process (yyyymmdd format)
+%		- radarname		string with radar name (MBR or KATRIN)
+%		- radarrange	string with radar height range (e.g. '155m-18m')
+%       - vers          string with version number (e.g. v0.3)
+%       - newextra      set to true if additional data should be processed and saved,
+%                       additional variables are reflectivity, cloud mask,
+%                       closed cloud mask, wind speed, LDR, Doppler velocity,
+%                       spectral width
+%		- instrument 	instrument name for output netcdf globa attribute
+%		- outfolder     output directory
+%
+%	contact: Heike Konow, heike.konow@uni-hamburg.de
+%	last revision: Dec 2020
+
+
+
 function bco_cloudmask_save2netcdf(start_date, end_date, radarname, radarrange, vers, newextra, instrument, outfolder)
 
 % Set paths to temporary file and output files
@@ -10,9 +29,6 @@ disp('>>>>>>>>>> <<<<<<<<<<')
 disp('Output file:')
 disp(outfile)
 disp('>>>>>>>>>> <<<<<<<<<<')
-
-% outfile = ['~/bco_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_' vers '.nc'];
-% outfile_2 = ['~/bco_cloudmask/cloudObjectMask_' radarname '_' radarrange '_' start_date '-' end_date '_extradata_' vers '.nc'];
 
 % List of variable names in temporary file
 varnames2read = {...%'Z',
