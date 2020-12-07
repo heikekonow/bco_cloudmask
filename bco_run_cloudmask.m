@@ -33,6 +33,10 @@ for i=1:length(radarname)
     % List available month folders
     monthfolders = listFiles(path, 'full');
 
+    % Look for nc files in folder list and remove
+    ind_nc = contains(monthfolders, '.nc');
+    monthfolders(ind_nc) = [];
+
     % Loop month folders
     for m=1:length(monthfolders)
         % List netcdf files in month folder
