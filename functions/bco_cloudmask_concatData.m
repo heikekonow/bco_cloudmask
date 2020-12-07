@@ -1,17 +1,26 @@
-% function bco_cloudmask_concatData(filepath, radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold)
-function bco_cloudmask_concatData(radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold, zenithAngle)
+% 	Code that looks for and concatenates bco data (wind and radar).
+% 	Input variables:
+%		- radarfiles 	cell array with full paths to radar data files
+%		- radarname		string with radar name (MBR or KATRIN)
+%		- radarrange	string with radar height range (e.g. '155m-18m')
+%		- start_date	string with first date to process (yyyymmdd format)
+%		- end_date		string with last date to process (yyyymmdd format)
+%		- dbz_threshold	number, lower threshold for reflectivity to be processed
+%						(to exclude sea salt particles, see Klingebiel et al. (2019))
+%		- zenithAngle	number that defines the angle that indicates zenith pointing
+%						instrument state
+%
+%	contact: Heike Konow, heike.konow@uni-hamburg.de
+%	last revision: Dec 2020
 
-% Variables for debugging
-a = 0; b = 0; c = 0; d = 0; f = 0; g = 0; h = 0; j = 0; k = 0; l = 0; m = 0; n = 0; o = 0; p = 0; q = 0; r = 0; s = 0; t = 0; u = 0; v = 0; w = 0; x = 0; y = 0; z = 0;
+
+
+function bco_cloudmask_concatData(radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold, zenithAngle)
 
 
 % Set upper limit for analysis
 % >>> remove later?
 height_limit = 13500;
-
-% Get first and last day of dataset
-% start_date = dates(1,:);
-% end_date = dates(end,:);
 
 % Set paths to data
 outpath = '/scratch/local1/m300512/bco_concat/';
@@ -35,7 +44,6 @@ disp(['Starting processing for ' year])
 disp('Concatenating')
 
 % Concatenate folder path and filenames to get list of files
-% files = cellstr([repmat(char(filepath), length(radarfiles), 1)   char(radarfiles)]);
 files = radarfiles;
 % Get list of folders with wind data (there's a folder for each month)
 wind_folders = listFiles([windpath year '*'],'full');
@@ -65,7 +73,7 @@ wind = cell(length(dayvector),1);
 elv = cell(length(dayvector),1);
 redodims = zeros(1, length(dayvector));
 
-%% Read data
+%% Read data %%%%%%%%%%%%%%%%%%%%%%%%
 
 % Loop all days
 for i=1:length(dayvector)
@@ -425,7 +433,7 @@ if ~isempty(redodims)
 	end
 end
 
-%% Adjust height dimensions
+%% Adjust height dimensions %%%%%%%%%%%%%%%%%%%%%%%%
 
 % Indices of height above set limit
 ind_aboveLimit = cellfun(@(x) x>height_limit, h, 'uni', false);
@@ -463,9 +471,8 @@ for i=1:length(unique_lengths)
 		error('Height dimensions don''t match')
     end
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Convert data
+%% Convert data %%%%%%%%%%%%%%%%%%%%%%%%
 
 % Get length of height arrays
 h_length = cell2mat(cellfun(@(x) size(x, 1), h, 'uni', false));
