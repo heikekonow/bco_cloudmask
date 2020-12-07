@@ -47,7 +47,7 @@ The exponent is set to 0.11 to assume near-neutral stratification and almost und
 ## 4. Saving data
 During the final step, the data are read from temporary files and saved into NetCDF files. Additionally, attributes for each variable, as well as global attributes are set. The resulting NetCDF file contains variables with the dimension "cloud number" and with the dimension(s) "time" and/or "height".
 
-The cloud parameters that were described in the [previous section](#3.-calculating-cloud-parameters) were calculated for each cloud object and thus have the dimension "cloud number". Additionally, a numerical mask with the associated cloud object IDs for each pixel are given with the dimensions time and height. Flags for radar status and missing wind are given with the dimension time.
+The cloud parameters that were described in the [previous section](#-3-calculating-cloud-parameters) were calculated for each cloud object and thus have the dimension "cloud number". Additionally, a numerical mask with the associated cloud object IDs for each pixel are given with the dimensions time and height. Flags for radar status and missing wind are given with the dimension time.
 
 The NetCDF header for one example file is given below:
 
