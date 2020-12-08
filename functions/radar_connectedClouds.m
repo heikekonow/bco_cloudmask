@@ -1,9 +1,11 @@
-%% [con_comp,numMask] = radar_connectedClouds(cloudMask)
+%% [con_comp,numMask] = radar_connectedClouds(cloudMask, minSize)
 % 	Function to perform connected components labelling on radar cloud
 % 	masks.
 %
 % 	Input variables:
 %		- cloudMask 	binary cloud mask (0 = no cloud, 1 = cloud)
+%       - minSize       minimum size for objects, everything smaller will
+%                       be removed as clutter
 %
 %   Output variables:
 %       - con_comp      structure connected components informations
@@ -19,7 +21,7 @@
 %	contact: Heike Konow, heike.konow@uni-hamburg.de
 %	last revision: Dec 2020
 
-function [con_comp,numMask] = radar_connectedClouds(cloudMask)
+function [con_comp,numMask] = radar_connectedClouds(cloudMask, minSize)
 
 % Preallocate
 numMask = nan(size(cloudMask));
@@ -40,7 +42,7 @@ con_comp = bwconncomp(cloudMask);
 % Get size of single clouds
 comp_size = cell2mat(cellfun(@length,con_comp.PixelIdxList,'UniformOutput',false));
 % Define index for clouds smaller than 4 pixels
-ind_toosmall = comp_size<4;
+ind_toosmall = comp_size<minSize;
 % Delete clouds that are too small
 con_comp.PixelIdxList(ind_toosmall) = [];
 % Remove number of too small clouds
