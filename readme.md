@@ -5,7 +5,7 @@ This code produces a cloud mask that is generated from radar reflectivity observ
 Processing is done in four steps:
 
    1. Concatenating data (functions/bco_cloudmask_concatData.m)
-   2. Generating cloud masks (functions/bco_cloudmask_mask)
+   2. Segmenting clouds (functions/bco_cloudmask_mask)
    3. Caculating cloud parameters (functions/bco_cloudmask_param)
    4. Saving data (functions/bco_cloudmask_save2netcdf)
 
@@ -20,16 +20,16 @@ To calculate cloud lengths from radar reflectivity measurements, wind observatio
 The concatenated radar data, together with surface meteorology, are saved in a temporary .mat file. The location for these temporary data files are specified in the beginning of functions/bco_cloudmask_concatData.m.
 
 
-## 2. Generating cloud masks
+## 2. Segmenting clouds
 Radar reflectivity data are converted to cloud masks where 0 denotes "no cloud" and 1 indicates "cloud". To avoid that short measurement interruptions are identified as beginning or ending of a cloud, this binary mask is cleaned up by applying morphological closing.
 
-A rectangular structuring element of 5x2 pixels is used. 5 vertical pixels correspond to 150 m. 2 horizontal pixels correspond to 20 s and with an estimated wind speed of 8 m/s, this are roughly 160 m cloud length. Although wind speed increases with height and thus 2 s measurement interruption would result in longer cloud gaps in higher altitudes. But this has not been incorporated in this code yet. It is assumed that this effect on the structuring is minor.
+For closing of the cloud mask, a rectangular structuring element of 5x2 pixels is used. 5 vertical pixels correspond to 150 m. 2 horizontal pixels correspond to 20 s and with an estimated wind speed of 8 m/s, this are roughly 160 m cloud length. Although wind speed increases with height and thus 2 s measurement interruption would result in longer cloud gaps in higher altitudes. But this has not been incorporated in this code yet. It is assumed that this effect on the structuring is minor.
 
-After morphological closing has been applied, cloud objects are segmented by applying connected components analysis to the cloud mask. During this step, objects that comprise less than four pixels are discarded as clutter.
+After morphological closing has been applied, cloud objects are segmented by applying connected components labeling ([Dillencourt et al., 1992](https://doi.org/10.1145/128749.128750)) to the cloud mask. For this, adjacent cloudy pixels are assigned the same label if they are connected via 8-connectivity. During this step, objects that comprise less than four pixels are discarded as clutter.
 
 
 ## 3. Calculating cloud parameters
-In this step, parameters for each individual segmented cloud object (see [previous step](#2.-generating-cloud-masks)) are calculated. The calculated parameters are: cloud start time, cloud end time, cloud/chord length, cloud depth, cloud base height, cloud top height.
+In this step, parameters for each individual segmented cloud object (see previous step, 2. Segmenting clouds) are calculated. The calculated parameters are: cloud start time, cloud end time, cloud/chord length, cloud depth, cloud base height, cloud top height.
 
 **Cloud start time** and **cloud end time** are the first and last time steps at which a cloud object passes over the radar.
 
@@ -41,13 +41,13 @@ Cloud length or **chord length** is calculated from duration (the time it took a
 <!-- $$u(z) = u_{2m} (\frac{z}{2}^{0.11}) $$ -->
 The exponent is set to 0.11 to assume near-neutral stratification and almost undisturbed flow over the ocean ([Hsu et al., 1994](https://journals.ametsoc.org/view/journals/apme/33/6/1520-0450_1994_033_0757_dtplwp_2_0_co_2.xml?tab_body=pdf)).
 
-**Cloud base height** is the height of the lowest cloudy pixel of each cloud object. Accordingly, is **cloud top height** the height of the highest cloudy pixel.
+**Cloud base height** is the height of the lowest cloudy pixel of each cloud object. It should be noted that in this processing setup, no distinction is made between cloud pixels and precipitation pixels. Therefore, the lowest pixel of a cloud object can also be the lowest pixel with rain. Accordingly, **cloud top height** is the height of the highest cloudy pixel.
 **Cloud depth** is then calculated from the difference between cloud top height and cloud base height for each segmented cloud object.
 
 ## 4. Saving data
 During the final step, the data are read from temporary files and saved into NetCDF files. Additionally, attributes for each variable, as well as global attributes are set. The resulting NetCDF file contains variables with the dimension "cloud number" and with the dimension(s) "time" and/or "height".
 
-The cloud parameters that were described in the [previous section](#-3-calculating-cloud-parameters) were calculated for each cloud object and thus have the dimension "cloud number". Additionally, a numerical mask with the associated cloud object IDs for each pixel are given with the dimensions time and height. Flags for radar status and missing wind are given with the dimension time.
+The cloud parameters that were described in the previous step (3. Calculating cloud parameters) were calculated for each cloud object and thus have the dimension "cloud number". Additionally, a numerical mask with the associated cloud object IDs for each pixel are given with the dimensions time and height. Flags for radar status and missing wind are given with the dimension time.
 
 The NetCDF header for one example file is given below:
 
@@ -101,3 +101,8 @@ variables:
 		:institution = "Max Planck Institute for Meteorology, Hamburg" ;
 		:instrument = "MBR2 cloud radar"
 ```
+
+## References
+Dillencourt, M. B., Samet, H., & Tamminen, M. (1992). A general approach to connected-component labeling for arbitrary image representations. Journal of the ACM, 39(2), 253–280. https://doi.org/10.1145/128749.128750
+
+Hsu, S. A., Meindl, E. A., & Gilhousen, D. B. (1994). Determining the power-law wind-profile exponent under near-neutral stability conditions at sea. Journal of Applied …, 33, 757–765. https://doi.org/10.1175/1520-0450(1994)
