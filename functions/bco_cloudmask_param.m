@@ -10,7 +10,7 @@
 
 
 
-function bco_cloudmask_param(start_date, end_date, radarname, radarrange)
+function bco_cloudmask_param(start_date, end_date, radarname, radarrange, tmppath)
 
 % Necessary, since this code has been copied from flight data processing where
 % multiple flights were looped over. This should be removed in the future.
@@ -23,7 +23,7 @@ disp('Calculating parameters')
 
 %% Load data %%%%%%%%%%%%%%%
 % Set path to data to be read
-filepath = ['/scratch/local1/m300512/bco_concat/Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
+filepath = [tmppath 'Z_' radarname '_' radarrange '_' start_date '-' end_date '_closed.mat'];
 
 % Read data
 datastruct = load(filepath);

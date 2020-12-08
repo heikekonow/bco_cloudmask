@@ -15,17 +15,18 @@
 
 
 
-function bco_cloudmask_concatData(radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold, zenithAngle)
+function bco_cloudmask_concatData(radarfiles, radarname, radarrange, start_date, end_date, dbz_threshold, zenithAngle, ...
+                                    outpath, tmppath, windpath)
 
 
 % Set upper limit for analysis
 % >>> remove later?
 height_limit = 13500;
 
-% Set paths to data
-outpath = '/scratch/local1/m300512/bco_concat/';
-tmppath = '/scratch/local1/m300512/data_tmp/';
-windpath = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/I_Meteorology_2m/';
+% % Set paths to data
+% outpath = '/scratch/local1/m300512/bco_concat/';
+% tmppath = '/scratch/local1/m300512/data_tmp/';
+% windpath = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/I_Meteorology_2m/';
 
 % If tmppath doesn't exist, create
 if ~exist(tmppath,'dir')

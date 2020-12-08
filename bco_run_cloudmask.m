@@ -11,10 +11,10 @@ tic
 clear; close all
 
 %% Set parameters here %%%%%%%%%%%%%%%%%%%%%%%%
-% Set path to radar data
-path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Ka-Band/MBR2/10s/';
-% Set path to output files
-outpath = '/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/';
+% % Set path to radar data
+% path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Ka-Band/MBR2/10s/';
+% % Set path to output files
+% outpath = '/pool/OBS/ACPC/MBR2/cloudmask/bco_object_cloudmask/';
 % Set radar names to work on
 radarname = {'MBR'};
 % radarname = {'MBR', 'KATRIN'};
@@ -26,7 +26,16 @@ newextra = true;
 dbz_threshold = -50;
 % Set zenith angle, everything deviating from this will be removed as scanning
 zenithAngle = 0;
+% Set minimum cloud object size
+minSize = 4;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+configstruct = config;
+path = configstruct.path;
+outpath = configstruct.outpath;
+outpathtmp = configstruct.outpathtmp;
+tmppath = configstruct.tmppath;
+windpath = configstruct.windpath;
 
 %% Prepare dates %%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -130,16 +139,17 @@ for i=1:length(radarname)
             if ~exist(outfile, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
                 % Concatenate data
                 % bco_cloudmask_concatData(path, datafiles, radarname{i}, radarrange, start_date, end_date, dbz_threshold)
-                bco_cloudmask_concatData(datafiles, radarname{i}, radarrange, start_date, end_date, dbz_threshold, zenithAngle)
+                bco_cloudmask_concatData(datafiles, radarname{i}, radarrange, start_date, end_date, dbz_threshold, zenithAngle, ...
+                                            outpathtmp, tmppath, windpath)
 
                 % Generate cloud mask
-                bco_cloudmask_mask(radarname{i}, radarrange, start_date, end_date)
+                bco_cloudmask_mask(radarname{i}, radarrange, start_date, end_date, minSize, tmppath)
 
                 % Caclulate cloud parameter
-                bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange)
+                bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange, tmppath)
 
                 % Save data to netcdf
-                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i}, outpath)
+                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i}, outpath, tmppath)
 
             % If new extra data should be processed and the corresponding file doesn't exist already
             elseif newextra && ~exist(outfile_2, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
