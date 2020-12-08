@@ -143,13 +143,13 @@ for i=1:length(radarname)
                                             outpathtmp, tmppath, windpath)
 
                 % Generate cloud mask
-                bco_cloudmask_mask(radarname{i}, radarrange, start_date, end_date, minSize, tmppath)
+                bco_cloudmask_mask(radarname{i}, radarrange, start_date, end_date, minSize, outpathtmp)
 
                 % Caclulate cloud parameter
-                bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange, tmppath)
+                bco_cloudmask_param(start_date, end_date, radarname{i}, radarrange, outpathtmp)
 
                 % Save data to netcdf
-                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i}, outpath, tmppath)
+                bco_cloudmask_save2netcdf(start_date, end_date, radarname{i}, radarrange, version, newextra, radarname{i}, outpath, outpathtmp)
 
             % If new extra data should be processed and the corresponding file doesn't exist already
             elseif newextra && ~exist(outfile_2, 'file') && ~isempty(datafiles) %~contains(start_date, 'deg')
