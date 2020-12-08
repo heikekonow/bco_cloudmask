@@ -1,3 +1,18 @@
+% 	Function to return variable information from NetCDF file.
+%
+% 	Input variables:
+%		- pathtofile 	string with full path to NetCDF file
+%
+%   Output variables:
+%       - varnames      cell array containing variable names
+%       - dimids        cell array containing dimension identifiers
+%       - dimnames      cell array containing dimension names
+%       - dimlengths    cell array containing dimension lengths
+%
+%	contact: Heike Konow, heike.konow@uni-hamburg.de
+%	last revision: Dec 2020
+
+
 function [varnames,dimids,dimnames,dimlengths] = nclistvars(pathtofile)
 
 % Function to list variables in netcdf file

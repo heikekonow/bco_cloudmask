@@ -1,3 +1,8 @@
+% 	Code that starts cloud mask processing.
+% 	Set data paths and processing features in the beginning of this file
+%
+%	contact: Heike Konow, heike.konow@uni-hamburg.de
+%	last revision: Dec 2020
 
 % Time
 tic
@@ -5,6 +10,7 @@ tic
 % Clean up
 clear; close all
 
+%% Set parameters here %%%%%%%%%%%%%%%%%%%%%%%%
 % Set path to radar data
 path = '/pool/OBS/BARBADOS_CLOUD_OBSERVATORY/Level_1/B_Reflectivity/Ka-Band/MBR2/10s/';
 % Set path to output files
@@ -20,6 +26,7 @@ newextra = true;
 dbz_threshold = -50;
 % Set zenith angle, everything deviating from this will be removed as scanning
 zenithAngle = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Prepare dates %%%%%%%%%%%%%%%%%%%%%%%%
 

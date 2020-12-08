@@ -1,35 +1,18 @@
-%% get_indTime
-%   get_indTime - One line description of what the function or script performs (H1 line)
-%   Optional file header info (to give more details about the function than in the H1 line)
-%   Optional file header info (to give more details about the function than in the H1 line)
-%   Optional file header info (to give more details about the function than in the H1 line)
+%% get_indTime(uniTime,instrTime, varargin)
+%   get_indTime - Get indices of instrument time to transfer to uniform time
 %
-%   Syntax:  [output1,output2] = function_name(input1,input2,input3)
+%   Syntax:  indTime = get_indTime(uniTime,instrTime, varargin)
 %
-%   Inputs:
-%       input1 - Description
-%       input2 - Description
-%       input3 - Description
+%   Input variables:
+%       - uniTime   uniform time to which instrument time should be transfered
+%       - instrTime instrument measurement time
+%       - varargin  instrument name (only set to be relevant if instrument
+%                   is 'bahamas'
 %
-%   Outputs:
-%       output1 - Description
-%       output2 - Description
+%   Output variables:
+%       - indTime   index array for instrument time to transfer to uniform time
 %
-%   Example:
-%       Line 1 of example
-%       Line 2 of example
-%       Line 3 of example
-%
-%   Other m-files required: none
-%   Subfunctions: none
-%   MAT-files required: none
-%
-%   See also:
-%
-%   Author: Dr. Heike Konow
-%   Meteorological Institute, Hamburg University
-%   email address: heike.konow@uni-hamburg.de
-%   Website: http://www.mi.uni-hamburg.de/
+%   contact: Heike Konow, heike.konow@uni-hamburg.de
 %   March 2016; Last revision: June 2016
 
 %%
@@ -69,26 +52,39 @@ if nargin==2
 elseif nargin==3
     % Check Name
     if strcmp(varargin{1},'bahamas')
+        % Find first and last time step in Bahamas times that match uniform
+        % time
         a = find(uniTime<instrTime(1),1,'last');
         b = find(uniTime>instrTime(end),1,'first');
-        % length of relevant time interval
+        
+        % Get length of relevant time interval
         t = b-a+1;
-
+        
+        % Preallocate
         indTimeUni = nan(t,1);
         indTimeInstr = nan(t,1);
+        % Initialize counter
         k = 1;
+        
+        % Loop time
         for i=a:b
+            
+            % Find minimal time deviation for current time step between
+            % uniform time and Bahamas time
             absDifference = abs(instrTime-uniTime(i));
-
             indMinim(k) = find(absDifference==min(absDifference),1,'first');
 
+            % If this is not the first time step
             if k>1 && (indMinim(k)~=indMinim(k-1)) && absDifference(indMinim(k))<oneSecond% && ~isnan(indTime(i-1)))
                 indTimeInstr(k) = indMinim(k);
                 indTimeUni(k) = i;
+                
+            % If this is the first time step
             elseif k==1
                 indTimeInstr(k) = indMinim(k);
                 indTimeUni(k) = i;
             end
+            % Increase counter
             k = k+1;
         end
     else
