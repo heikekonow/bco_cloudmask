@@ -105,6 +105,9 @@ variables:
 		:instrument = "MBR2 cloud radar"
 ```
 
+## Usage
+If you want to run the code, start by renaming config.sample.m to config.m and adapt the paths in this file to you system. Decide on the parameters for the processing in the beginning of the file bco_run_cloudmask.m and run.
+
 ## References
 Dillencourt, M. B., Samet, H., & Tamminen, M. (1992). A general approach to connected-component labeling for arbitrary image representations. Journal of the ACM, 39(2), 253–280. https://doi.org/10.1145/128749.128750
 
