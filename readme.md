@@ -1,6 +1,8 @@
 # Cloudmask from radar observations at Barbados Cloud Observatory (BCO)
 
-This code produces a cloud mask that is generated from radar reflectivity observations.
+The [Barbados Cloud Observatory (BCO)](https://barbados.mpimet.mpg.de) is a meteorological observations site located at the eastern shore of Barbados. It is operated by the Max-Planck-Institute for Meteorology (MPI-M) in Hamburg, Germany since 2010. The main focus of observations at the BCO are trade wind cumuli and their surrounding atmosphere. To this end, a wide range of instruments are operated here. One of which is a cloud radar.
+
+To make the classification of observed clouds by different paramters possible, this code has been developed to generate a cloud mask product from cloud radar observations. In the current state, only the two Ka-band radars are implemented. Adaption to the W-band radar is planned.
 
 Processing is done in four steps:
 
@@ -9,6 +11,7 @@ Processing is done in four steps:
    3. Caculating cloud parameters (functions/bco_cloudmask_param)
    4. Saving data (functions/bco_cloudmask_save2netcdf)
 
+Step 1 explicitly builds on the data structure of the BCO data at the MPI-M as it prepares available data for further processing. But the later steps can be applied to other kinds of radar data from different sources as well.
 
 ## 1. Concatenating data
 Available measurement data from BCO radar observations are listed and analyzed. Since vertical resolutions changed during the BCO operations, only data with consistent vertical resolutions are concatenated. Every time, the vertical resolution changes, a new output product is generated.
